@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  jenkins:
+    build: .
+    image: jenkins-prive:latest
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - DISPLAY=:99
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - CYPRESS_CACHE_FOLDER=/var/jenkins_home/.cache/Cypress
+    volumes:
+      - /mnt/extradisk/jenkins_home:/var/jenkins_home
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    networks:
+      - jenkins-xvfb-network
+    depends_on:
+      - xvfb
+
+  xvfb:
+    image: ubuntu:20.04
+    environment:
+      - DISPLAY=:99
+    networks:
+      - jenkins-xvfb-network
+    command: >
+      sh -c "
+        apt-get update &&
+        apt-get install -y xvfb &&
+        Xvfb :99 -screen 0 1280x1024x24 &
+        tail -f /dev/null
+      "
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+
+networks:
+  jenkins-xvfb-network:
+    driver: bridge
